@@ -6,7 +6,7 @@ from pprint import pprint
 
 
 class targetFinder(object):
-	
+    
     def __init__(self, Camera):
         '''Initialize camera'''
         self.camera = Camera
@@ -17,7 +17,7 @@ class targetFinder(object):
         
         self.hsvl = np.array((70,50,60))
         self.hsvh = np.array((80,255,255))
-	self.show = "show" in sys.argv
+        self.show = "show" in sys.argv
         #self.width = 800
         #self.height = 488
 
@@ -51,7 +51,8 @@ class targetFinder(object):
         im2, contours, hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
 
         #grab both min area rectangles
-        contours = sorted(contours, key=cv2.contourArea, reverse = True)[:3]
+
+        contours = sorted(contours, key=cv2.contourArea, reverse = True)[:4]
         rectangles = []
 
 
@@ -79,20 +80,25 @@ class targetFinder(object):
             else:
                 angle = r[2]+90
             return angle
-                
+
+        candidates = []
         for i in range(len(rectangles)-1):
             angle1 = findAngle(rectangles[i])
             angle2 = findAngle(rectangles[i+1])
             #print angle1,angle2
             if angle1>0 and angle2<0:
                 targetRectangles = [rectangles[i], rectangles[i+1]]
-                return targetRectangles
-                
-        return []
+                ex = abs(self.findCentroid(targetRectangles)[0] - self.camera.width/2)
+                candidates.append((ex, targetRectangles))
+        #check for candidates then sort by distance from center
+        if not candidates:
+            return []
+        else:
+            candidates.sort()
+            return candidates[0][1]        
         
+            
         
-	        
-	    
     def findCentroid(self, rectangles):
 
         centers = np.array([r[0] for r in rectangles])
